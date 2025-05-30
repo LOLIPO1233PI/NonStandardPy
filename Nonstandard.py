@@ -38,19 +38,14 @@ def super_script(value: Number) -> str:
 def valid_input(
     N: Union[int, Decimal, Fraction, float], max_precision: int = 10**14
 ) -> Union[int, Fraction]:
-    if isinstance(
-        N,
-        (
-            int,
-            Fraction,
-        ),
-    ):
+    if isinstance(N, (int,Fraction)):
         return N
     elif isinstance(N, Decimal):
         return Fraction.from_decimal(N).limit_denominator(max_precision)
     elif isinstance(N, float):
         return Fraction.from_float(N).limit_denominator(max_precision)
-    return N  # If the Number subclass is unknown
+    elif isinstance(N, (HyperRealExp, Epsilon)):
+        return N
 
 
 class Epsilon:
@@ -120,29 +115,42 @@ class Epsilon:
             return value.value == self.value and self.exp == value.exp
         return False
 
+    def __sub__(self, value):
+        return self + -value
+    
+    def __rsub__(self, value):
+        return value + -self
 class HyperRealExp:
     __slots__ = ("expresion", "real_part", "hyper_real_part")
 
     def __init__(self, *args):
         self.expresion = [*args]
+        
         self.real_part = sum([i for i in self.expresion if isinstance(i, Number)])
+        # filtering for hyperreals
         self.hyper_real_part: object = list(
             [i for i in self.expresion if isinstance(i, (Epsilon,))]
         )
-        infinitesimal_exp_table = set([i.exp for i in self.hyper_real_part])
-        hyper_parts = [
-            list(filter(lambda x: x.exp == i, self.hyper_real_part))
-            for i in infinitesimal_exp_table
-        ]
-        self.hyper_real_part = [sum(i) for i in hyper_parts]
+        
         self.hyper_real_part = [i.simplify() for i in self.hyper_real_part]
+    
         self.real_part = sum(
             [
                 self.real_part,
                 *[i for i in self.hyper_real_part if isinstance(i, Number)],
             ]
         )
-        self.hyper_real_part = [i for i in self.hyper_real_part if  isinstance(i, Epsilon)]
+        self.hyper_real_part = [i for i in self.hyper_real_part if isinstance(i, Epsilon)]
+        
+        infinitesimal_exp_table = set([i.exp for i in self.hyper_real_part])
+        # separating them by exponent
+        
+        hyper_parts = [
+            list(filter(lambda x: x.exp == i, self.hyper_real_part))
+            for i in infinitesimal_exp_table
+        ]
+        self.hyper_real_part = [sum(i) for i in hyper_parts]
+
         self.expresion = [self.real_part, *self.hyper_real_part]
 
     def __str__(self):
@@ -161,7 +169,7 @@ class HyperRealExp:
             )
         return HyperRealExp(
             self.real_part * value,
-            *list(map(lambda x: x * value, self.hyper_real_part)),
+            *[i * value for i in self.hyper_real_part],
         )
 
     def __rmul__(self, value):
@@ -169,7 +177,7 @@ class HyperRealExp:
 
     def __add__(self, value):
         value = valid_input(value)
-        return HyperRealExp(self.expresion, value)
+        return HyperRealExp(*self.expresion, value)
 
     def __radd__(self, value):
         return self + value
@@ -184,6 +192,7 @@ class HyperRealExp:
                 self.real_part / value,
                 *[i / value for i in self.hyper_real_part],
             )
+        
         return self * (Fraction(1, valid_input(value)))
 
     def __pow__(self, value):
@@ -191,6 +200,7 @@ class HyperRealExp:
             return prod([self for _ in range(value)])
         return NotImplementedError
 
+    # 
     def st(self):
         return self.real_part
 
@@ -200,7 +210,5 @@ class HyperRealExp:
         return False
 
 if __name__ == "__main__":
-    func = lambda x: x**2  # noqa: E731
-    # derivative calc lets go !
-
-    print(Epsilon(4) / (2 * Epsilon(8, 2)))
+    print(((Epsilon(1) - 5) * 5) ** 2) # TEST
+    #
