@@ -2,7 +2,7 @@ from decimal import Decimal
 from fractions import Fraction
 from math import prod
 from numbers import Number
-from typing import Union
+from typing import Any, Union
 
 
 translation_table = {
@@ -21,12 +21,21 @@ translation_table = {
 }
 
 
+def devellop_tuple(A: tuple[Any]) -> list[Any]:
+    # [(..ε, ...ε), (...ε^n, ...ε^n)]
+    operation_res = []
+    K1, K2 = A
+    for i in K1:
+        for x in K2:
+            operation_res.append(x * i)
+    return operation_res
+
 def make_list_same(a, b):
     if len(b) < len(a):
         b = [*b, *[1 for _ in range(len(a) - len(b))]]
     elif len(b) > len(a):
         a = [*a, *[1 for _ in range(len(b) - len(a))]]
-    return zip(a, b)
+    return (a, b)
 
 
 # this is the same as str.maketrans("-0123456789/", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹⁄")
@@ -163,7 +172,7 @@ class HyperRealExp:
         if isinstance(value, HyperRealExp):
             return HyperRealExp(
                 self.real_part * value.real_part,
-                *[i[0] * i[1] for i in make_list_same(self.hyper_real_part, value.hyper_real_part)],
+                *devellop_tuple(make_list_same(self.hyper_real_part, value.hyper_real_part)), # this were is located the problem
                 *[i * self.real_part for i in value.hyper_real_part],
                 *[i * value.real_part for i in self.hyper_real_part],
             )
@@ -209,6 +218,13 @@ class HyperRealExp:
             return self.real_part == value.real_part and self.hyper_real_part == value.hyper_real_part
         return False
 
+    def MD(self, MDfileName: str = "MathOut.md") -> None:
+        Content = f'* {str(self)}\n'
+        with open(MDfileName, "a", encoding='utf-8') as f:
+            f.write(Content)
+        print(f'This expression has been exported to {MDfileName}')
+
 if __name__ == "__main__":
-    print(((Epsilon(1) - 5) * 5) ** 2) # TEST
+    print((Epsilon(1) - 5 - Epsilon(1, 2)))
+    (Epsilon(1) - 5 - Epsilon(1, 2)).MD() # (ε - 5)(ε - 5)
     #
