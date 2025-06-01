@@ -3,7 +3,7 @@ from fractions import Fraction
 from math import prod
 from numbers import Number
 from typing import Any, Union
-
+from itertools import groupby
 
 translation_table = {
     45: 8315,
@@ -30,6 +30,7 @@ def devellop_tuple(A: tuple[Any]) -> list[Any]:
             operation_res.append(x * i)
     return operation_res
 
+
 def make_list_same(a, b):
     if len(b) < len(a):
         b = [*b, *[0 for _ in range(len(a) - len(b))]]
@@ -47,7 +48,7 @@ def super_script(value: Number) -> str:
 def valid_input(
     N: Union[int, Decimal, Fraction, float], max_precision: int = 10**14
 ) -> Union[int, Fraction]:
-    if isinstance(N, (int,Fraction)):
+    if isinstance(N, (int, Fraction)):
         return N
     elif isinstance(N, Decimal):
         return Fraction.from_decimal(N).limit_denominator(max_precision)
@@ -58,17 +59,17 @@ def valid_input(
 
 
 class Epsilon:
-    __slots__ = ("value", "exp", 'simpedval')
-    
+    __slots__ = ("value", "exp", "simpedval")
+
     def __new__(cls, q, exp=1):
         return 0 if q == 0 else (q if exp == 0 else super().__new__(cls))
-    # simplifiying then return object (self) and forwaring the logic to the 
+
+    # simplifiying then return object (self) and forwaring the logic to the
     # the __new__ dunder is really new for me so i didn't comprehend it well
     def __init__(self, quantity, exp=1):
         self.value = valid_input(quantity)
         self.exp = valid_input(exp)
         self.simpedval = self.simplify()
-        
 
     def __str__(self):
         if self.value == 0:
@@ -76,7 +77,7 @@ class Epsilon:
         elif self.exp == 0:
             return str(self.value)
         elif self.exp < 0:
-            return f'{self.value}ω{super_script(-self.exp) if self.exp != -1 else ''}' # so we dont need to add an actuall omega class
+            return f"{self.value}ω{super_script(-self.exp) if self.exp != -1 else ''}"  # so we dont need to add an actuall omega class
         return f"{self.value}ε{super_script(self.exp) if self.exp != 1 else ''}"
 
     def __repr__(self):
@@ -92,7 +93,7 @@ class Epsilon:
 
     def __add__(self, value):
         if isinstance(value, self.__class__):
-            if value.exp == self.exp == 1:
+            if value.exp == self.exp:
                 return Epsilon(value.value + self.value, self.exp)
         elif value == 0:
             return self
@@ -132,27 +133,34 @@ class Epsilon:
 
     def __sub__(self, value):
         return self + -value
-    
+
     def __rsub__(self, value):
         return value + -self
-    
+
     def MD(self, MDfileName: str = "MathOut.md") -> None:
-        Content = f'* {str(self)}\n'
-        with open(MDfileName, "a", encoding='utf-8') as f:
+        Content = f"* {str(self)}\n"
+        with open(MDfileName, "a", encoding="utf-8") as f:
             f.write(Content)
-        print(f'This expression has been exported to {MDfileName}')
+        print(f"This expression has been exported to {MDfileName}")
+
 
 class HyperRealExp:
     __slots__ = ("expresion", "real_part", "hyper_real_part")
 
     def __init__(self, *args):
         self.expresion = [*args]
-        
+
         self.real_part = sum([i for i in self.expresion if isinstance(i, Number)])
         # filtering for hyperreals
-        self.hyper_real_part: object = list(
-            [i for i in self.expresion if isinstance(i, (Epsilon,))]
-        )
+        self.hyper_real_part: object = [
+            i for i in self.expresion if isinstance(i, (Epsilon,))
+        ]
+
+        splited_hyper_reals = [
+            list(i[1]) for i in groupby(self.hyper_real_part, key=lambda s: s.exp)
+        ]
+
+        self.hyper_real_part = [sum(i) for i in splited_hyper_reals]
 
         self.expresion = [self.real_part, *self.hyper_real_part]
 
@@ -166,7 +174,9 @@ class HyperRealExp:
         if isinstance(value, HyperRealExp):
             return HyperRealExp(
                 self.real_part * value.real_part,
-                *devellop_tuple(make_list_same(self.hyper_real_part, value.hyper_real_part)), # this were is located the problem
+                *devellop_tuple(
+                    make_list_same(self.hyper_real_part, value.hyper_real_part)
+                ),  # this were is located the problem
                 *[i * self.real_part for i in value.hyper_real_part],
                 *[i * value.real_part for i in self.hyper_real_part],
             )
@@ -195,28 +205,32 @@ class HyperRealExp:
                 self.real_part / value,
                 *[i / value for i in self.hyper_real_part],
             )
-        
+
         return self * (Fraction(1, valid_input(value)))
 
     def __pow__(self, value):
         if isinstance(value, int):
             return prod([self for _ in range(value)])
-        return NotImplementedError
+        return NotImplemented
 
-    # 
+    #
     def st(self):
         return self.real_part
 
     def __eq__(self, value):
         if isinstance(value, HyperRealExp):
-            return self.real_part == value.real_part and self.hyper_real_part == value.hyper_real_part
+            return (
+                self.real_part == value.real_part
+                and self.hyper_real_part == value.hyper_real_part
+            )
         return False
 
     def MD(self, MDfileName: str = "MathOut.md") -> None:
-        Content = f'* {str(self)}\n \n'
-        with open(MDfileName, "a", encoding='utf-8') as f:
+        Content = f"* {str(self)}\n \n"
+        with open(MDfileName, "a", encoding="utf-8") as f:
             f.write(Content)
-        print(f'This expression has been exported to {MDfileName}')
+        print(f"This expression has been exported to {MDfileName}")
+
 
 if __name__ == "__main__":
     print((Epsilon(1) + Epsilon(2, -1)) ** 7)
