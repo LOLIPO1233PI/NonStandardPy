@@ -71,18 +71,15 @@ class Epsilon:
 
     # simplifiying then return object (self) and forwaring the logic to the
     # the __new__ dunder is really new for me so i didn't comprehend it well
+
     def __init__(self, quantity: Number, exp: Number=1) -> None:
         self.value = valid_input(quantity)
         self.exp = valid_input(exp)
 
     def __str__(self) -> str:
-        if self.value == 0:
-            return "0"
-        elif self.exp == 0:
-            return str(self.value)
-        elif self.exp < 0:
-            return f"{self.value}ω{super_script(-self.exp) if self.exp != -1 else ''}"  # so we dont need to add an actuall omega class
-        return f"{self.value}ε{super_script(self.exp) if self.exp != 1 else ''}"
+        if self.exp < 0:
+            return f"{self.value if self.value != 1 else ''}ω{super_script(-self.exp) if self.exp != -1 else ''}"  # so we dont need to add an actuall omega class
+        return f"{self.value if self.value != 1 else ''}ε{super_script(self.exp) if self.exp != 1 else ''}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -172,6 +169,8 @@ class HyperRealExp:
     def __str__(self) -> str:
         if not self.hyper_real_part:
             return str(self.real_part)
+        elif self.real_part == 0:
+            return ' + '.join(map(str, self.hyper_real_part))
         return f"{self.real_part} + {' + '.join(map(str, self.hyper_real_part))}"
 
     def __mul__(self, value) -> 'HyperRealExp':
@@ -218,7 +217,6 @@ class HyperRealExp:
             return prod([self for _ in range(value)])
         return NotImplemented
 
-    #
     def st(self) -> int | Fraction:
         return self.real_part
 
@@ -238,4 +236,4 @@ class HyperRealExp:
 
 
 if __name__ == "__main__":
-    print((Epsilon(1) + Epsilon(2, -1)) ** 2)
+    print((Epsilon(1) + Epsilon(2, -1)) ** 7)
