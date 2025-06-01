@@ -2,7 +2,7 @@ from decimal import Decimal
 from fractions import Fraction
 from math import prod
 from numbers import Number
-from typing import Any, Self, Union, Tuple, List
+from typing import Self, Union, List
 from itertools import groupby
 
 translation_table = {
@@ -24,23 +24,14 @@ translation_table = {
 class SupportsAdd:
     'Type hinting for class wich have a deffined addition operation'
 
-def develop_tuple(A: tuple[SupportsAdd]) -> list[SupportsAdd]:
+def develop_list(A: List[SupportsAdd], B: List[SupportsAdd]) -> list[SupportsAdd]:
     # ([...ε^n, ...ε^n, ...], [...ε^n, ...ε^n, ...])
     operation_res = []
-    K1, K2 = A
+    K1, K2 = A, B
     for i in K1:
         for x in K2:
             operation_res.append(x * i)
     return operation_res
-
-
-def make_list_same(a: list[Any], b: list[Any], filler: Any = 0) -> Tuple[List[Any], List[Any]]:
-    'This is for making two list the same size '
-    if len(b) < len(a):
-        b = [*b, *[filler for _ in range(len(a) - len(b))]]
-    elif len(b) > len(a):
-        a = [*a, *[filler for _ in range(len(b) - len(a))]]
-    return (a, b)
 
 
 # this is the same as str.maketrans("-0123456789/", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹⁄")
@@ -178,8 +169,8 @@ class HyperRealExp:
         if isinstance(value, HyperRealExp):
             return HyperRealExp(
                 self.real_part * value.real_part,
-                *develop_tuple(
-                    make_list_same(self.hyper_real_part, value.hyper_real_part)
+                *develop_list(
+                    self.hyper_real_part, value.hyper_real_part
                 ),  # this were is located the problem
                 *[i * self.real_part for i in value.hyper_real_part],
                 *[i * value.real_part for i in self.hyper_real_part],
@@ -214,6 +205,8 @@ class HyperRealExp:
 
     def __pow__(self, value) -> 'HyperRealExp':
         if isinstance(value, int):
+            if value < 0:
+                return prod([self for _ in range(value)])
             return prod([self for _ in range(value)])
         return NotImplemented
 
@@ -236,4 +229,4 @@ class HyperRealExp:
 
 
 if __name__ == "__main__":
-    print((Epsilon(1) + Epsilon(2, -1)) ** 7)
+    print((Epsilon(1) + Epsilon(2, -1)) ** 2)
