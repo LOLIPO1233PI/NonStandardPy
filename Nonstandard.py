@@ -59,7 +59,7 @@ def valid_input(
 
 
 class Epsilon:
-    __slots__ = ("value", "exp", "simpedval")
+    __slots__ = ("value", "exp")
 
     def __new__(cls, q, exp=1):
         return 0 if q == 0 else (q if exp == 0 else super().__new__(cls))
@@ -69,7 +69,6 @@ class Epsilon:
     def __init__(self, quantity, exp=1):
         self.value = valid_input(quantity)
         self.exp = valid_input(exp)
-        self.simpedval = self.simplify()
 
     def __str__(self):
         if self.value == 0:
@@ -233,4 +232,4 @@ class HyperRealExp:
 
 
 if __name__ == "__main__":
-    print((Epsilon(1) + Epsilon(2, -1)) ** 7)
+    print((Epsilon(1) + Epsilon(2, -1)) ** 2)
