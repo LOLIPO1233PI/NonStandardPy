@@ -3,7 +3,6 @@ from fractions import Fraction
 from math import prod
 from numbers import Number
 from typing import Self, Union, List
-from itertools import groupby
 
 
 class SupportsAdd:
@@ -58,14 +57,14 @@ class Epsilon:
     def __str__(self) -> str:
         if self.exp < 0:
             return (
-                (self.value if self.value != 1 else "")
+                (str(self.value) if self.value != 1 else "")
                 + "ω"
                 + (super_script(-self.exp) if self.exp != -1 else "")
             )  # so we dont need to add an actuall omega class
         return (
-            (self.value if self.value != 1 else "")
+            (str(self.value) if self.value != 1 else "")
             + "ε"
-            + (super_script(-self.exp) if self.exp != -1 else "")
+            + (super_script(self.exp) if self.exp != -1 else "")
         )
 
     def __repr__(self) -> str:
@@ -133,7 +132,7 @@ class Epsilon:
 
 
 class Omega:
-    "A class that mimics the behavior of a infinity"
+    "A class that mimics the behavior of infinities"
 
     def __new__(cls, q: Number = 1, exp: Number = 1) -> Epsilon:
         return Epsilon(q, -exp)
@@ -153,11 +152,15 @@ class HyperRealExp:
             i for i in self.expresion if isinstance(i, (Epsilon,))
         ]
 
-        splited_hyper_reals = [
-            list(i[1]) for i in groupby(self.hyper_real_part, key=lambda s: s.exp)
+        infinitesimal_exp_table = {*[i.exp for i in self.hyper_real_part]}
+        # separating them by exponent
+        
+        hyper_parts = [
+            [x for x in self.hyper_real_part if x.exp == i]
+            for i in infinitesimal_exp_table
+        
         ]
-
-        self.hyper_real_part = [sum(i) for i in splited_hyper_reals]
+        self.hyper_real_part = [sum(i) for i in hyper_parts]
 
         self.expresion = [self.real_part, *self.hyper_real_part]
 
@@ -166,7 +169,7 @@ class HyperRealExp:
             return str(self.real_part)
         elif self.real_part == 0:
             return " + ".join(map(str, self.hyper_real_part))
-        return self.real_part + " + ".join(map(str, self.hyper_real_part))
+        return str(self.real_part) + " + " + " + ".join(map(str, self.hyper_real_part))
 
     def __mul__(self, value) -> "HyperRealExp":
         value = valid_input(value)
@@ -230,3 +233,6 @@ class HyperRealExp:
         with open(MDfileName, "a", encoding="utf-8") as f:
             f.write(Content)
         print("This expression has been exported to %s ", MDfileName)
+        
+if __name__ == "__main__":
+    print(((Epsilon(1) + Epsilon(2, -1)) ** 2))
