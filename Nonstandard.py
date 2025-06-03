@@ -135,7 +135,7 @@ class Epsilon:
 class Omega:
     "A class that mimics the behavior of a infinity"
 
-    def __new__(cls, q: Number = 1, exp: Number = 1) -> Self | Number:
+    def __new__(cls, q: Number = 1, exp: Number = 1) -> Epsilon:
         return Epsilon(q, -exp)
 
 
